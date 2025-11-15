@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic Calculator (MD3 Dark)</title>
+    <!-- Load Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font family -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            /* MD3 Dark Theme Background (Surface) */
+            background-color: #141218; 
+            color: #E6E1E5; /* On Surface */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        /* MD3 Dark surface colors */
+        .calculator-container {
+            /* Surface container low */
+            background-color: #1C1B1F; 
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            max-width: 420px;
+            width: 100%;
+        }
+        .display-history {
+            color: #CAC4D0; /* On Surface Variant */
+        }
+        .display-current {
+            color: #E6E1E5; /* On Surface */
+        }
+        /* Button Styling - Default */
+        .calc-button {
+            height: 60px;
+            transition: background-color 0.15s, transform 0.05s;
+            font-size: 1.15rem;
+            font-weight: 500;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Default color is the Utility group */
+            background-color: #36343B; 
+            color: #E6E1E5;
+        }
+        .calc-button:hover {
+            background-color: #49454F; /* Hover effect */
+        }
+        .calc-button:active {
+            transform: scale(0.98);
+        }
+
+        /* Utility Buttons (Sign) - Tertiary Container */
+        .btn-util {
+            background-color: #36343B; 
+            color: #E6E1E5;
+        }
+        .btn-util:hover {
+            background-color: #49454F; 
+        }
+
+        /* Control Buttons (AC, DEL) - Distinct Red-Orange for clearing/deleting */
+        .btn-control {
+            background-color: #A32626; /* Deep Red-Orange */
+            color: #FFDADA; /* High contrast text */
+            font-weight: 600;
+        }
+        .btn-control:hover {
+            background-color: #B23D3D; 
+        }
+
+        /* Number/Decimal buttons (Surface Container High) */
+        .btn-num {
+            background-color: #2D2C31; 
+        }
+        .btn-num:hover {
+            background-color: #36343B;
+        }
+
+        /* Operator buttons (Primary Container/Secondary Container) */
+        .btn-op {
+            background-color: #6750A4; /* Primary */
+            color: #FFDDA6; /* On Primary - adapted for visibility */
+            font-weight: 600;
+        }
+        .btn-op:hover {
+            background-color: #7A5CBF;
+        }
+        
+        /* Equals button (MD3 Primary Color Accent) */
+        .btn-equals {
+            background-color: #D0BCFF; /* Primary */
+            color: #381E72; /* On Primary Container */
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+        .btn-equals:hover {
+            background-color: #B29DFF;
+        }
+    </style>
+</head>
+<body>
+
+<div id="calculator" class="calculator-container rounded-3xl p-4 md:p-6 shadow-2xl">
+    <!-- Display Area (Modified to include copy button) -->
+    <div class="mb-4 p-4 md:p-6 rounded-xl bg-[#201D23] overflow-hidden flex flex-col relative">
+        <!-- History remains right-aligned -->
+        <div id="display-history" class="display-history text-sm md:text-md h-6 whitespace-nowrap overflow-x-auto text-right">0</div>
+        
+        <!-- Current display and Copy button container -->
+        <div class="flex justify-end items-center mt-1 relative">
+            <div id="display-current" class="display-current text-4xl md:text-5xl font-light h-16 overflow-x-auto whitespace-nowrap flex-grow text-right pr-12">0</div>
+            
+            <!-- Copy Button/Icon -->
+            <button id="copy-button" class="absolute right-0 top-1/2 transform -translate-y-1/2 p-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors" title="Copy Result">
+                <!-- Copy Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Button Grid (4 columns) -->
+    <div id="keypad" class="grid grid-cols-4 gap-2">
+        
+        <!-- R1: Utility/Control -->
+        <button class="calc-button rounded-2xl btn-control" data-type="clear" data-value="AC">AC</button>
+        <button class="calc-button rounded-2xl btn-util" data-type="sign" data-value="±">±</button>
+        <button class="calc-button rounded-2xl btn-op" data-type="operator" data-value="%">%</button>
+        <button class="calc-button rounded-2xl btn-op" data-type="operator" data-value="/"> &divide;</button>
+
+        <!-- R2: Numbers 7, 8, 9, Multiply -->
+        <button class="calc-button rounded-2xl btn-num" data-type="number" data-value="7">7</button>
+        <button class="calc-button rounded-2xl btn-num" data-type="number" data-value="8">8</button>
+        <button class="calc-button rounded-2xl btn-num" data-type="number" data-value="9">9</button>
+        <button class="calc-button rounded-2xl btn-op" data-type="operator" data-value="*">&times;</button>
+        
+        <!-- R3: Numbers 4, 5, 6, Subtract -->
+        <button class="calc-button rounded-2xl btn-num" data-type="number" data-value="4">4</button>
+        <button class="calc-button rounded-2xl btn-num" data-type="number" data-value="5">5</button>
+        <button class="calc-button rounded-2xl btn-num" data-type="number" data-value="6">6</button>
+        <button class="calc-button rounded-2xl btn-op" data-type="operator" data-value="-">-</button>
+
+        <!-- R4: Numbers 1, 2, 3, Add -->
+        <button class="calc-button rounded-2xl btn-num" data-type="number" data-value="1">1</button>
+        <button class="calc-button rounded-2xl btn-num" data-type="number" data-value="2">2</button>
+        <button class="calc-button rounded-2xl btn-num" data-type="number" data-value="3">3</button>
+        <button class="calc-button rounded-2xl btn-op" data-type="operator" data-value="+">+</button>
+
+        <!-- R5: Delete, Zero (span 2), Decimal -->
+        <button class="calc-button rounded-2xl btn-control" data-type="delete" data-value="DEL">
+            <!-- Icon for backspace/delete -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="10" y1="12" x2="18" y2="12"/></svg>
+        </button>
+        <button class="calc-button rounded-2xl col-span-2 btn-num" data-type="number" data-value="0">0</button>
+        <button class="calc-button rounded-2xl btn-num" data-type="decimal" data-value=".">.</button>
+        
+        <!-- R6: Equals (span 4) -->
+        <button class="calc-button rounded-2xl col-span-4 btn-equals" data-type="equals" data-value="=">=</button>
+    </div>
+
+    <!-- Error/Message Box -->
+    <div id="message-box" class="mt-4 p-3 bg-red-800 text-white rounded-xl hidden"></div>
+    
+    <!-- Attribution -->
+    <div class="text-center mt-4 text-sm text-gray-400">
+        Created by Jonas Lund 2025
+    </div>
+</div>
+
+<script>
+    // Note: The custom factorial function has been removed as per user request to simplify.
+
+    // --- Calculator Setup ---
+    const displayCurrent = document.getElementById('display-current');
+    const displayHistory = document.getElementById('display-history');
+    const keypad = document.getElementById('keypad');
+    const messageBox = document.getElementById('message-box');
+    const copyButton = document.getElementById('copy-button'); 
+    
+    // Calculator State
+    let currentExpression = '';
+    let displayValue = '0';
+    let history = '';
+    let lastResult = null; 
+
+    // Utility to show temporary messages (replaces alert())
+    function showMessage(message, type = 'error', duration = 3000) {
+        messageBox.textContent = message;
+        messageBox.className = 'mt-4 p-3 rounded-xl transition-all duration-300 ' + 
+                                (type === 'error' ? 'bg-red-800' : 'bg-green-600');
+        messageBox.style.display = 'block';
+        setTimeout(() => {
+            messageBox.style.display = 'none';
+        }, duration);
+    }
+
+    // Function to copy the current result to the clipboard
+    function copyResult() {
+        const textToCopy = displayCurrent.textContent;
+        
+        // Temporarily create an input field to hold the text
+        const tempInput = document.createElement('input');
+        tempInput.value = textToCopy;
+        document.body.appendChild(tempInput);
+        
+        // Select the text and execute copy command
+        tempInput.select();
+        tempInput.setSelectionRange(0, 99999); // For mobile devices
+        
+        try {
+            // Use document.execCommand('copy') for guaranteed environment compatibility
+            document.execCommand('copy');
+            showMessage("Result copied to clipboard!", 'success', 2000);
+        } catch (err) {
+            console.error('Could not copy text: ', err);
+            showMessage("Failed to copy result.", 'error', 2000);
+        }
+        
+        // Remove the temporary input
+        document.body.removeChild(tempInput);
+    }
+
+    // Update the visual display
+    function updateDisplay() {
+        displayCurrent.textContent = String(displayValue) || '0';
+        displayHistory.textContent = history || '0';
+
+        // Scroll display content to the right to see the latest input
+        displayCurrent.scrollLeft = displayCurrent.scrollWidth;
+        displayHistory.scrollLeft = displayHistory.scrollWidth;
+    }
+
+    // Core function to prepare the expression for evaluation (now much simpler)
+    function prepareExpression(expr) {
+        // Only replace display symbols for operators
+        let processedExpr = expr
+            .replace(/×/g, '*')
+            .replace(/÷/g, '/')
+            .replace(/%/g, '/100*'); 
+        
+        // 1. Remove any accidental double operators
+        processedExpr = processedExpr.replace(/([+\-*/])\s*([+\-*/])/g, '$2');
+        
+        return processedExpr;
+    }
+
+    // Calculation logic
+    function calculate() {
+        if (!currentExpression.trim()) return;
+
+        const finalExpression = currentExpression;
+        history = finalExpression + ' ='; // Use finalExpression for history display
+
+        let result;
+        try {
+            let expressionToEval = prepareExpression(finalExpression);
+            
+            // 1. Remove trailing operators that would cause a JS syntax error in eval()
+            expressionToEval = expressionToEval.replace(/([*\/+%-])$/, '');
+
+            // 2. Final check for obviously invalid expressions
+            if (!expressionToEval.trim()) {
+                throw new Error("Invalid expression structure.");
+            }
+            
+            // eslint-disable-next-line no-eval
+            result = eval(expressionToEval);
+
+            if (result === Infinity || result === -Infinity || isNaN(result)) {
+                throw new Error("Result undefined.");
+            }
+
+            // Limit to 10 decimal places for clean display
+            result = parseFloat(result.toFixed(10));
+            
+            displayValue = String(result);
+            currentExpression = String(result); // Start new calculation from result
+            lastResult = result;
+
+        } catch (error) {
+            displayValue = 'Error';
+            currentExpression = '';
+            lastResult = null;
+            showMessage(`Error: Invalid expression or math error.`, 'error');
+            console.error("Calculation Error:", error.message);
+        }
+
+        updateDisplay();
+    }
+    
+    // Main button handler
+    function handleButtonClick(type, value) {
+        // Reset from 'Error' state
+        if (displayValue === 'Error') {
+            currentExpression = '';
+            displayValue = '0';
+        }
+        
+        const lastChar = currentExpression.slice(-1);
+        const isOperator = ['+', '-', '*', '/', '%'].includes(value);
+
+        switch (type) {
+            case 'number':
+                // If starting a new input after an equals operation, overwrite
+                if (currentExpression === String(lastResult) && lastResult !== null) {
+                    currentExpression = value;
+                    lastResult = null;
+                } else {
+                    currentExpression += value;
+                }
+                break;
+
+            case 'operator':
+                const isLastCharOperator = ['+', '-', '*', '/', '%'].includes(lastChar);
+
+                if (currentExpression === '' && value === '-') {
+                    currentExpression += value; // Allow starting with a negative sign
+                } else if (!isLastCharOperator) {
+                    currentExpression += value;
+                } else {
+                    // Replace the last operator if a new one is pressed
+                    currentExpression = currentExpression.slice(0, -1) + value;
+                }
+                break;
+
+            case 'decimal':
+                // Check if the current segment already contains a decimal
+                const parts = currentExpression.split(/([+\-*/%])/).filter(p => p !== '');
+                const lastPart = parts.length > 0 ? parts[parts.length - 1] : '';
+
+                if (!lastPart.includes('.')) {
+                    if (lastPart === '' || isOperator) {
+                         currentExpression += '0' + value;
+                    } else {
+                         currentExpression += value;
+                    }
+                }
+                break;
+            
+            case 'sign':
+                // Regex to find the last number segment, possibly preceded by a minus sign
+                const signToggleRegex = /(-?[\d.]+)$/;
+                const match = currentExpression.match(signToggleRegex);
+
+                if (match) {
+                    const segment = match[0];
+                    const index = currentExpression.lastIndexOf(segment);
+                    const prefix = currentExpression.substring(0, index);
+                    
+                    if (segment.startsWith('-')) {
+                        // Currently negative, make it positive (remove the leading minus)
+                        currentExpression = prefix + segment.substring(1);
+                    } else {
+                        // Currently positive, make it negative (add a leading minus)
+                        currentExpression = prefix + '-' + segment;
+                    }
+                } else if (currentExpression === '' || ['+', '-', '*', '/', '%'].includes(lastChar)) {
+                    // Allows starting a new expression or a term after an operator with a minus sign
+                    currentExpression += '-';
+                }
+                break;
+            
+            case 'clear':
+                currentExpression = '';
+                history = '';
+                displayValue = '0';
+                lastResult = null;
+                break;
+            
+            case 'delete':
+                currentExpression = currentExpression.slice(0, -1);
+                break;
+
+            case 'equals':
+                calculate();
+                return; 
+        }
+
+        // Update current display value to show the ongoing expression
+        displayValue = currentExpression || '0';
+        updateDisplay();
+    }
+
+    // Attach event listeners to the keypad
+    keypad.addEventListener('click', (event) => {
+        const button = event.target.closest('.calc-button');
+        if (button) {
+            const type = button.dataset.type;
+            const value = button.dataset.value;
+            handleButtonClick(type, value);
+        }
+    });
+
+    // Attach event listener to the copy button
+    copyButton.addEventListener('click', (event) => {
+        // Stop click event propagation to prevent it from affecting the calculator input logic
+        event.stopPropagation();
+        copyResult();
+    });
+
+    // Handle keyboard input 
+    document.addEventListener('keydown', (event) => {
+        const key = event.key;
+        let type = null;
+        let value = null;
+
+        if (/[0-9]/.test(key)) {
+            type = 'number';
+            value = key;
+        } else if (key === '.') {
+            type = 'decimal';
+            value = key;
+        } else if (key === '+' || key === '-' || key === '*' || key === '/') {
+            type = 'operator';
+            value = (key === '*') ? '×' : (key === '/') ? '÷' : key;
+        } else if (key === '%') {
+             type = 'operator';
+            value = '%';
+        } else if (key === 'Enter' || key === '=') {
+            type = 'equals';
+            value = '=';
+            event.preventDefault(); 
+        } else if (key === 'Backspace') {
+            type = 'delete';
+            value = 'DEL';
+            event.preventDefault(); 
+        } else if (key === 'Escape') {
+            type = 'clear';
+            value = 'AC';
+        }
+
+        if (type) {
+            handleButtonClick(type, value);
+        }
+    });
+
+    // Initial display setup
+    updateDisplay();
+</script>
+
+</body>
+</html>
